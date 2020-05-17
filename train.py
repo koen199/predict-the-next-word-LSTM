@@ -111,7 +111,7 @@ def save_model(filename:str, model:LSTM, char2int:dict, use_gpu:bool):
 
 
 
-def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, batch_size=2, seq_len=256, lr=0.001, filename):
+def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, batch_size=2, seq_len=256, lr=0.001, filename='model.net'):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     hidden_state = init_hidden(model.num_layers, batch_size, model.hidden_size)
