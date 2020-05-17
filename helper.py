@@ -106,8 +106,8 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
         model = model.cuda()
     
     model.train()
+    counter = 0
     for e in range(epochs):
-        counter = 0
         min_validation_loss = np.Inf
         for input_data, target in get_data_as_batch(batch_size=batch_size, seq_len=seq_len, data=train_data):
             #Do the below to stop backpropagation trough the entire train data
@@ -149,7 +149,7 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
             #increment the step counter
             counter += 1 
 
-            if counter % 10 == 0:
+            if counter % 500 == 0:
                 valid_losses = []
                 hidden_state_valid = init_hidden(model.num_layers, batch_size, model.hidden_size)
                 model.eval()
@@ -207,4 +207,4 @@ if __name__ == "__main__":
     model = LSTM(input_size=len(char_set), hidden_size=256, num_layers=2, dropout=0.2)
 
     #train the model
-    train(model, char2int, train_data=train_data, valid_data=valid_data, epochs=3, batch_size=3, seq_len=256, lr=0.01)
+    train(model, char2int, train_data=train_data, valid_data=valid_data, epochs=5, batch_size=3, seq_len=256, lr=0.001)
