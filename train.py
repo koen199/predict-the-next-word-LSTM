@@ -111,7 +111,7 @@ def save_model(filename:str, model:LSTM, char2int:dict, use_gpu:bool):
 
 
 
-def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, batch_size=2, seq_len=256, lr=0.01):
+def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, batch_size=2, seq_len=256, lr=0.001, filename):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     hidden_state = init_hidden(model.num_layers, batch_size, model.hidden_size)
@@ -201,7 +201,7 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
                 "Val Loss: {:.4f}".format(mean_valid_loss))
 
                 if mean_valid_loss < min_validation_loss:
-                    save_model('model.pth',model, char2int, use_gpu)
+                    save_model(filename,model, char2int, use_gpu)
                     print("Lowest validation loss->Saving model!")
                     min_validation_loss = mean_valid_loss
                 model.train()
@@ -211,7 +211,7 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='This scripts trains an LSTM-network to predict the next charachter based on current and previous characters')
     parser.add_argument('--data_file', help = 'Relative path to the text file used for training and validation. Default=\'data/anna.txt\'', default='data/anna.txt')
-    parser.add_argument('--save_dir', help = 'The filename of the saved model. default=model.net', default='model.net')
+    parser.add_argument('--filename', help = 'The filename of the saved model. default=model.net', default='model.net')
     parser.add_argument('--lr', help = "The learning rate used by the optimizer to train the network (default=0.001)", default = 0.001)
     parser.add_argument('--epochs', help = "The number of epochs the network is trained", default = 15)
     parser.add_argument('--batch_size', help = "Training and validation data is split up in given amount of different batches. Training happens on batches in parallel. Default=3", default = 3)
@@ -239,4 +239,4 @@ if __name__ == "__main__":
     #model.load_state_dict(torch.load('model.pth'))
 
     #train the model
-    train(model, char2int, train_data=train_data, valid_data=valid_data, epochs=args.epochs, batch_size=args.batch_size, seq_len=args.seq_len, lr=args.lr)
+    train(model, char2int, train_data=train_data, valid_data=valid_data, epochs=args.epochs, batch_size=args.batch_size, seq_len=args.seq_len, lr=args.lr, filename=args.filename)
