@@ -205,6 +205,8 @@ if __name__ == "__main__":
 
     #initialize the model
     model = LSTM(input_size=len(char_set), hidden_size=256, num_layers=2, dropout=0.2)
+    #load model from checkpoint
+    model.load_state_dict(torch.load('model.pth'))
 
     #train the model
     train(model, char2int, train_data=train_data, valid_data=valid_data, epochs=5, batch_size=3, seq_len=256, lr=0.001)
