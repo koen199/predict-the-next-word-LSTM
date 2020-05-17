@@ -94,6 +94,21 @@ def check_data(input_data:torch.Tensor, target:torch.Tensor, char2int):
     input_char = [int2char[int(i)] for i in np.nditer(input_data)]
     target_char = [int2char[int(i)] for i in np.nditer(target)]
 
+def save_model(filename:str, model:LSTM, char2int:dict, use_gpu:bool):
+    model = model.cpu()
+    checkpoint = {
+        'input_size': model.input_size,
+        'hidden_size': model.hidden_size,
+        'num_layers': model.num_layers,
+        'char2int': char2int, 
+        'state_dict': model.state_dict()
+    }
+    with open(filename, 'wb') as f:
+        torch.save(checkpoint, f)
+    if use_gpu:
+        model = model.cuda()
+
+
 
 def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, batch_size=2, seq_len=256, lr=0.01):
     criterion = nn.CrossEntropyLoss()
@@ -185,11 +200,7 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
                 "Val Loss: {:.4f}".format(mean_valid_loss))
 
                 if mean_valid_loss < min_validation_loss:
-                    model = model.cpu()
-                    torch.save(model.state_dict(), 'model.pth')
-                    if use_gpu:
-                        model = model.cuda()
-                    min_validation_loss = mean_valid_loss
+                    save_model('model.pth',model, char2int, use_gpu)
                     print("Lowest validation loss->Saving model!")
                 model.train()
 
@@ -206,8 +217,10 @@ if __name__ == "__main__":
     #Map each charachter to a unique integer
     char2int = {char: i for i, char in enumerate(char_set)}
 
+
     #initialize the model
-    model = LSTM(input_size=len(char_set), hidden_size=256, num_layers=2, dropout=0.2)
+    input_size = len(char_set)
+    model = LSTM(input_size=input_size, hidden_size=256, num_layers=2, dropout=0.2)
     #load model from checkpoint
     #model.load_state_dict(torch.load('model.pth'))
 
