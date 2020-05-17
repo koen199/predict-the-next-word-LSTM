@@ -203,6 +203,7 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
                 if mean_valid_loss < min_validation_loss:
                     save_model('model.pth',model, char2int, use_gpu)
                     print("Lowest validation loss->Saving model!")
+                    min_validation_loss = mean_valid_loss
                 model.train()
 
 
