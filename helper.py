@@ -50,8 +50,6 @@ def convert_to_one_hot_encoded(np_array, char2int:dict):
 
     return one_hot_array
 
-
-
 def one_hot_encode(char2int:dict, char):
     one_hot_vector = np.zeros((1, len(char2int)), dtype=np.uint8)
     index = char2int[char]
@@ -85,6 +83,18 @@ def init_hidden(num_layers, batch_size, hidden_size):
         hidden_state = (h_0, c_0)
         return hidden_state
 
+def check_data(input_data:torch.Tensor, target:torch.Tensor, char2int):
+    #Handy during debugging to see convert input and target tensor back to original char format to
+    #see if everything is going well....
+    int2char = {value: key for key, value in char2int.items()}
+    input_data, target = input_data.numpy(), target.numpy()
+    input_data = np.nanargmax(input_data, axis=2)
+    input_data = np.reshape(input_data, newshape=(-1))
+
+    input_char = [int2char[int(i)] for i in np.nditer(input_data)]
+    target_char = [int2char[int(i)] for i in np.nditer(target)]
+
+
 def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, batch_size=2, seq_len=256):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.05)
@@ -98,6 +108,7 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
     for e in range(epochs):
         counter = 0
         model.train()
+        min_validation_loss = np.Inf
         for input_data, target in get_data_as_batch(batch_size=batch_size, seq_len=seq_len, data=train_data):
             #Do the below to stop backpropagation trough the entire train data
             hidden_state = tuple([each.data for each in hidden_state])
@@ -105,12 +116,13 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
             #Prepare input to network
             input_data = convert_to_one_hot_encoded(input_data, char2int)
             target = convert_to_one_hot_encoded(target, char2int)
+            target = np.nanargmax(target, axis=2)
 
             #set accumelated gradient to zero
             model.zero_grad()
 
             #convert numpy arrays to tensors
-            input_data, target = torch.Tensor(input_data), torch.Tensor(target)
+            input_data, target = torch.Tensor(input_data).type(torch.float32), torch.Tensor(target).type(torch.long)
             #move tensors to the gpu if possible
             if use_gpu:
                 h_0, c_0 = hidden_state
@@ -121,9 +133,10 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
             output, hidden_state = model.forward(input_data, hidden_state)
 
             #First dimension is converted to batch_size*seq_len
-            target = target.view(-1, model.input_size)
+            target = target.view(-1)
 
             #calculate loss and backpropagate
+            #check_data(input_data, target, char2int)
             loss = criterion(output, target)
             loss.backward()
 
@@ -136,22 +149,47 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
             #increment the step counter
             counter += 1 
 
-            if counter % 10:
+            if counter % 10 == 0:
                 valid_losses = []
-                hidden_state = init_hidden(model.num_layers, batch_size, model.hidden_size)
+                hidden_state_valid = init_hidden(model.num_layers, batch_size, model.hidden_size)
                 for input_data, target in get_data_as_batch(batch_size=batch_size, seq_len=seq_len, data=valid_data):
                     model.eval()
-                    with torch.no_grad():                        
-                        output, hidden_state = model.forward(input_data, hidden_state)
-                        target = target.view(-1, model.input_size)
+                    with torch.no_grad():  
+                        #Do the below to stop backpropagation trough the entire train data
+                        hidden_state_valid = tuple([each.data for each in hidden_state_valid])
+
+                        #Prepare input to network
+                        input_data = convert_to_one_hot_encoded(input_data, char2int)
+                        target = convert_to_one_hot_encoded(target, char2int)
+                        target = np.nanargmax(target, axis=2)   
+
+                        #convert numpy arrays to tensors
+                        input_data, target = torch.Tensor(input_data).type(torch.float32), torch.Tensor(target).type(torch.long)
+
+                        #move tensors to the gpu if possible
+                        if use_gpu:
+                            h_0, c_0 = hidden_state_valid
+                            input_data, h_0, c_0 = input_data.cuda(), h_0.cuda(), c_0.cuda()
+                            hidden_state_valid = (h_0, c_0)
+                        
+                        output, hidden_state_valid = model.forward(input_data, hidden_state_valid)
+                        target = target.view(-1)
                         valid_loss = criterion(output, target)
                         valid_losses.append(valid_loss.item())
 
 
-                        print("Epoch: {}/{}...".format(e+1, epochs),
-                        "Step: {}...".format(counter),
-                        "Loss: {:.4f}...".format(loss.item()),
-                        "Val Loss: {:.4f}".format(np.mean(valid_losses)))
+                mean_valid_loss = np.mean(valid_losses)
+                print("Epoch: {}/{}...".format(e+1, epochs),
+                "Step: {}...".format(counter),
+                "Loss: {:.4f}...".format(loss.item()),
+                "Val Loss: {:.4f}".format(mean_valid_loss))
+
+                if mean_valid_loss < min_validation_loss:
+                    torch.save(model.state_dict(), 'model.pth')
+                    min_validation_loss = mean_valid_loss
+                    print("Lowest validation loss->Saving model!")
+
+
             
 if __name__ == "__main__":
     data = read_file()
