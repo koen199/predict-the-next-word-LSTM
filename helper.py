@@ -105,9 +105,9 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
         print("Using gpu for training...")
         model = model.cuda()
     
+    model.train()
     for e in range(epochs):
         counter = 0
-        model.train()
         min_validation_loss = np.Inf
         for input_data, target in get_data_as_batch(batch_size=batch_size, seq_len=seq_len, data=train_data):
             #Do the below to stop backpropagation trough the entire train data
@@ -152,8 +152,8 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
             if counter % 10 == 0:
                 valid_losses = []
                 hidden_state_valid = init_hidden(model.num_layers, batch_size, model.hidden_size)
+                model.eval()
                 for input_data, target in get_data_as_batch(batch_size=batch_size, seq_len=seq_len, data=valid_data):
-                    model.eval()
                     with torch.no_grad():  
                         #Do the below to stop backpropagation trough the entire train data
                         hidden_state_valid = tuple([each.data for each in hidden_state_valid])
@@ -188,6 +188,7 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
                     torch.save(model.state_dict(), 'model.pth')
                     min_validation_loss = mean_valid_loss
                     print("Lowest validation loss->Saving model!")
+                model.train()
 
 
             
