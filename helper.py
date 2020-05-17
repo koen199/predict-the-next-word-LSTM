@@ -209,4 +209,4 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load('model.pth'))
 
     #train the model
-    train(model, char2int, train_data=train_data, valid_data=valid_data, epochs=5, batch_size=3, seq_len=256, lr=0.001)
+    train(model, char2int, train_data=train_data, valid_data=valid_data, epochs=15, batch_size=3, seq_len=256, lr=0.001)
