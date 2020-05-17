@@ -126,7 +126,7 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
             #move tensors to the gpu if possible
             if use_gpu:
                 h_0, c_0 = hidden_state
-                input_data, h_0, c_0 = input_data.cuda(), h_0.cuda(), c_0.cuda()
+                input_data, h_0, c_0, target = input_data.cuda(), h_0.cuda(), c_0.cuda(), target.cuda()
                 hidden_state = (h_0, c_0)
 
             #Forward pass
