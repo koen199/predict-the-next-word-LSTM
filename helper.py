@@ -185,7 +185,10 @@ def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, b
                 "Val Loss: {:.4f}".format(mean_valid_loss))
 
                 if mean_valid_loss < min_validation_loss:
+                    model = model.cpu()
                     torch.save(model.state_dict(), 'model.pth')
+                    if use_gpu:
+                        model = model.cuda()
                     min_validation_loss = mean_valid_loss
                     print("Lowest validation loss->Saving model!")
                 model.train()
