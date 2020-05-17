@@ -95,9 +95,9 @@ def check_data(input_data:torch.Tensor, target:torch.Tensor, char2int):
     target_char = [int2char[int(i)] for i in np.nditer(target)]
 
 
-def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, batch_size=2, seq_len=256):
+def train(model:LSTM, char2int:dict, train_data:str, valid_data:str, epochs=5, batch_size=2, seq_len=256, lr=0.01):
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.05)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
     hidden_state = init_hidden(model.num_layers, batch_size, model.hidden_size)
 
     use_gpu = torch.cuda.is_available()
@@ -207,4 +207,4 @@ if __name__ == "__main__":
     model = LSTM(input_size=len(char_set), hidden_size=256, num_layers=2, dropout=0.2)
 
     #train the model
-    train(model, char2int, train_data=train_data, valid_data=valid_data, epochs=3, batch_size=3, seq_len=256)
+    train(model, char2int, train_data=train_data, valid_data=valid_data, epochs=3, batch_size=3, seq_len=256, lr=0.01)
